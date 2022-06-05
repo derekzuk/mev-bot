@@ -1,0 +1,47 @@
+{
+  "name": "searcher-minter",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "npx ts-node --project tsconfig.json src/index.ts",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@types/jasmine": "^3.6.2",
+    "@types/lodash": "^4.14.165",
+    "@types/node": "^16.7.2",
+    "@typescript-eslint/eslint-plugin": "^4.9.1",
+    "@typescript-eslint/parser": "^4.9.1",
+    "eslint": "^7.15.0",
+    "ethers": "^5.0.23",
+    "jasmine": "^3.6.3",
+    "nyc": "^15.1.0",
+    "truffle": "5.0.2",
+    "truffle-contract": "^4.0.31",
+    "ts-node": "^10.2.1",
+    "tslib": "^2.3.1",
+    "typescript": "^4.3.5"
+  },
+  "dependencies": {
+    "@flashbots/ethers-provider-bundle": "0.4.1",
+    "@metamask/eth-sig-util": "^4.0.0",
+    "@openzeppelin/contracts": "^4.3.2",
+    "@truffle/hdwallet-provider": "^1.5.1",
+    "abi-decoder": "^2.4.0",
+    "dotenv": "^16.0.0",
+    "eth-crypto": "^2.2.0",
+    "ethereum-cryptography": "^1.0.0",
+    "ethers": "5.4.5",
+    "jquery": "^3.6.0",
+    "jsdom": "^19.0.0",
+    "lodash": "^4.17.21",
+    "nodemailer": "^6.7.2",
+    "selenium-webdriver": "^4.1.1",
+    "ts-node": "^9.1.0",
+    "typescript": "^4.1.2",
+    "web3": "^1.7.0"
+  }
+}
