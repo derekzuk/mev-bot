@@ -1,10 +1,10 @@
 # Flashbots searcher-minter
 
-This repository is based on a very simple demo application of [Flashbots](https://docs.flashbots.net), which allows arbitrary submission of a single transaction to Flashbots. This could be used for many simple purposes, but in the demonstration, the goal was to mint an NFT.
+This repository was originally based on a simple demo application of [Flashbots](https://docs.flashbots.net), which allows arbitrary submission of a single transaction to Flashbots. This MEV bot could be adapted for many purposes, but in its current form it is used to snipe NFT drops.
 
 # How to run
 
-1. Create a .env file in the base folder \
+1. Create a .env file in the base folder
 2. Add Private Keys. ex: WALLET_PRIVATE_KEY="0x12390812803121293812389"
 3. Run the following commands. truffle will populate your /build folder.
 ```shell

@@ -11,38 +11,35 @@ import { FlashbotsBundleProvider, FlashbotsTransaction, FlashbotsTransactionResp
 import { TransactionRequest } from "@ethersproject/abstract-provider";
 import { CARTOONS_ADDRESS, CARTOONS_ABI, CARTOONS_CONTRACT_OWNER, ALT_CARTOONS_CONTRACT_OWNER } from './cartoons-config'
 import { env } from "process";
+import { GWEI, ETHER, encodeSignedTransaction } from "./util/EthGeneralUtil"
 require('dotenv').config() // lets us use the config in the .env file
 // This app is based heavily on https://github.com/flashbots/searcher-minter
 var bigInt = require("big-integer");
 const { JSDOM } = require( "jsdom" );
 const { window } = new JSDOM( "" );
 const jQuery = require( "jquery" )( window );
-
 const ethers = require('ethers');
 const { encode } = require('rlp')
 const abiDecoder = require('abi-decoder'); // https://github.com/ConsenSys/abi-decoder
 const Web3 = require('web3')
 var HDWalletProvider = require("@truffle/hdwallet-provider");
 
-const CHAIN_ID = 1; // mainnet
-// const CHAIN_ID = 5; // goerli
+// Environment specific variables
+var CHAIN_ID;
+var web3;
+var FLASHBOTS_ENDPOINT;
+if (process.env.ENVIRONMENT == "mainnet") {
+  CHAIN_ID = 1;
+  web3 = new Web3(process.env.WSS_INFURA_MAINNET_URL);
+  FLASHBOTS_ENDPOINT = "https://relay.flashbots.net/";
+} else if (process.env.ENVIRONMENT == "goerli") {
+  CHAIN_ID = 5;
+  web3 = new Web3(process.env.WSS_INFURA_GOERLI_URL_99NA);
+  FLASHBOTS_ENDPOINT = "https://relay-goerli.flashbots.net";
+}
 const provider = new providers.JsonRpcProvider("http://localhost:8545", CHAIN_ID) // geth node
-
-const FLASHBOTS_ENDPOINT = "https://relay.flashbots.net/"; // mainnet
-// const FLASHBOTS_ENDPOINT = "https://relay-goerli.flashbots.net"; // goerli
-
-// subscribing to see pending transactions through Infura
-// const webSocketProvider = new providers.WebSocketProvider(process.env.WSS_INFURA_GOERLI_URL_99NA)
-// const web3 = new Web3(webSocketProvider)
-// const web3 = new Web3(process.env.WSS_INFURA_GOERLI_URL_99NA) // goerli
-// const web3 = new Web3(process.env.WSS_INFURA_MAINNET_URL) // mainnet
 // const web3 = new Web3("http://localhost:8545") // mainnet
-const web3 = new Web3.providers.WebsocketProvider('ws://127.0.0.1:3334'); // geth node
-// const web3 = new Web3(webSocketProvider);
-
-// ethers.js can use Bignumber.js class or the JavaScript-native bigint. I changed this to bigint as it is easier to deal with
-const GWEI = 10n ** 9n
-const ETHER = 10n ** 18n
+// const web3 = new Web3.providers.WebsocketProvider('ws://127.0.0.1:3334'); // geth node
 
 var nullArray = []
 
@@ -86,12 +83,8 @@ var publicMintEnabledFunction
 // var existingSupplyFunction // IGNORE
 // var contractAbiProvided = (CONTRACT_ABI !== nullArray) // IGNORE
 
-
-
 var CONTRACT_OWNER_ADDRESS = CARTOONS_CONTRACT_OWNER // IGNORE. only matters if watching mempool
 var ENABLE_PUBLIC_MINT_SIGNATURE = "0x2b707c71" // IGNORE. only matters if watching mempool
-
-
 
 // WT_PRIVATE_KEY_1 refers to the private key set up in the .env file
 // const testWallet = new Wallet(process.env.WALLET_PRIVATE_KEY, provider)
@@ -146,15 +139,6 @@ const wallet20 = new Wallet(process.env.WT_PRIVATE_KEY_20, provider)
 // const wallet49 = new Wallet(process.env.WT_PRIVATE_KEY_49, provider)
 // const wallet50 = new Wallet(process.env.WT_PRIVATE_KEY_50, provider)
 
-var walletArr = [wallet1, 
-  // wallet2, wallet3, wallet4, wallet5, 
-  // wallet6, wallet7, wallet8, wallet9, wallet10,
-  // wallet11, wallet12, wallet13, wallet14, wallet15, wallet16, wallet17, wallet18, wallet19, wallet20
-]
-var nonce3Addresses = [wallet1.address.toLowerCase(), 
-  wallet2.address.toLowerCase()
-]
-
 // this appears to work async
 let sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
 
@@ -175,66 +159,6 @@ function matchFlashbotsTransaction(flashbotsTransaction: FlashbotsTransaction) {
     console.log("RelayResponseError")
     console.log("error.message: " + flashbotsTransaction.error.message)
     console.log("error.code: " + flashbotsTransaction.error.code)
-  }
-}
-
-// Works. Used for flashbotting other peoples transactions.
-function encodeSignedTransaction(tx) {
-  if (!tx || !tx.v || !tx.r || !tx.s) {
-    throw 'missing signed component(s)';
-  }
-  const type2 = (tx.type == 2);
-  const params = [];
-  // Type 2 marker or something
-  if (type2) {
-    if (tx.chainId == 1) { // mainnet
-      params.push('0x01');
-    } else if (tx.chainId == 5) { // goerli
-      params.push('0x05');
-    }
-  }
-  // Nonce
-  params.push((!tx.nonce || tx.nonce == '0') ? '0x' :
-    ethers.utils.hexlify(tx.nonce));
-  // Gas price fields
-  if (type2) {
-    params.push(ethers.utils.parseEther(
-      ethers.utils.formatEther(tx.maxPriorityFeePerGas))._hex);
-    params.push(ethers.utils.parseEther(
-      ethers.utils.formatEther(tx.maxFeePerGas))._hex);
-  } else {
-    params.push(web3.utils.numberToHex(parseInt(tx.gasPrice)));
-  }
-  // Gas limit
-  params.push(ethers.utils.hexlify(tx.gas));
-  // To
-  params.push(tx.to);
-  // Value
-  params.push((!tx.value || tx.value == '0') ? '0x' :
-      ethers.utils.hexlify(ethers.BigNumber.from(tx.value)));
-  // Input
-  params.push(tx.input);
-  // Some random type 2 thing?
-  if (type2) {
-    params.push([]);
-  }
-  // Signature components
-  if (type2) {
-    params.push(tx.v == '0x0' ? '0x' : tx.v);
-  } else {
-    params.push(tx.v);
-  }
-  params.push(tx.r);
-  params.push(tx.s);
-
-  if (type2) {
-    const res = '0x02' + encode(params).toString('hex');
-    if (ethers.utils.keccak256(res) !== tx.hash) { throw new Error("serializing failed!"); }
-    return res;    
-  } else {
-    const res = '0x' + encode(params).toString('hex');
-    if (ethers.utils.keccak256(res) !== tx.hash) { throw new Error("serializing failed!"); }
-    return res;
   }
 }
 
@@ -476,7 +400,7 @@ async function main() {
                         }
                         
                           // // We test a flashbots bundle with the mint enabled function, and if it works then we assume its good and blast off mint transactions
-                          // const raw = encodeSignedTransaction(transaction)
+                          // const raw = encodeSignedTransaction(transaction, web3)
                           // const wallet1tx = walletLoopMap.get(wallet1)[2]
                           // const bundledTransactions = [
                           //   {
