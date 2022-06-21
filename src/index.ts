@@ -11,7 +11,7 @@ import { FlashbotsBundleProvider, FlashbotsTransaction, FlashbotsTransactionResp
 import { TransactionRequest } from "@ethersproject/abstract-provider";
 import { CARTOONS_ADDRESS, CARTOONS_ABI, CARTOONS_CONTRACT_OWNER, ALT_CARTOONS_CONTRACT_OWNER } from './cartoons-config'
 import { env } from "process";
-import { GWEI, ETHER, encodeSignedTransaction } from "./util/EthGeneralUtil"
+import { GWEI, ETHER, encodeSignedTransaction, getMintFunctionInputs } from "./util/EthGeneralUtil"
 require('dotenv').config() // lets us use the config in the .env file
 // This app is based heavily on https://github.com/flashbots/searcher-minter
 var bigInt = require("big-integer");
@@ -165,58 +165,6 @@ function matchFlashbotsTransaction(flashbotsTransaction: FlashbotsTransaction) {
 const bigIntMax = (...args) => args.reduce((m, e) => e > m ? e : m); // calculate max
 const bigIntMin = (...args) => args.reduce((m, e) => e < m ? e : m); // calculate min
 
-// get probable mint function:
-async function getMintFunctionInputs() {
-  var returnVal = []
-  return new Promise<any[]>(async resolve => {
-    await jQuery.getJSON('https://api.etherscan.io/api?module=contract&action=getabi&address=' + "0xee29700134aab4f45b113e43e29ff06ce10687b7" + '&APIKey=' + process.env.ETHERSCAN_API_KEY, function (data) {
-      var contractABI = nullArray
-      contractABI = JSON.parse(data.result);
-      // console.log("contractABI: " + JSON.stringify(contractABI));
-      if (contractABI !== nullArray){
-          ContractObject = new Contract(CONTRACT_ADDRESS, contractABI, provider)
-          // look through object for features that indicate mint:
-          contractABI.forEach(abiObject => {            
-            try {
-              if (abiObject.stateMutability == "payable" && abiObject.type == "function") {
-                // Probably the mint function, although there may be multiple that we need to further filter:
-                console.log("Potential mint function: " + JSON.stringify(abiObject))
-                if (abiObject.inputs !== undefined && abiObject.inputs !== null && abiObject.inputs.length == 1) {
-                  var isQuantity = (abiObject.inputs[0].type == "uint256" || abiObject.inputs[0].internalType == "uint256")
-                  if (isQuantity) {
-                    returnVal.push(abiObject)
-                  }
-                } else if ((abiObject.inputs !== undefined && abiObject.inputs !== null && abiObject.inputs.length == 2)) {
-                  // look for type address and type uint
-                  var quantityIndex = -1
-                  var toAddressIndex = -1
-                  for (let i = 0; i < 2; i++) {
-                    if (abiObject.inputs[i].type == "uint256" || abiObject.inputs[i].internalType == "uint256") {
-                      // this is presumably the quantity to mint
-                      quantityIndex = i
-                    } else if (abiObject.inputs[i].type == "address" || abiObject.inputs[i].internalType == "address") {
-                      // this is presumably the toAddress
-                      toAddressIndex = i
-                    }
-                  }
-                  if (quantityIndex > -1 && toAddressIndex > -1) {
-                    returnVal.push(abiObject)
-                  }
-                }
-              }              
-            } catch (e) {
-              console.log("e: " + e);
-            }
-          })
-          
-      } else {
-          console.log("Error" );
-      }            
-  });
-  resolve(returnVal)
-  })
-}
-
 // ====================================
 // GLOBAL VARIABLES
 // ====================================
@@ -244,7 +192,7 @@ async function main() {
   // ===========================================
   // ETHERSCAN API INTERACTIONS
   // ===========================================
-  var mintFunctionInputs = await getMintFunctionInputs()
+  var mintFunctionInputs = await getMintFunctionInputs(ContractObject, CONTRACT_ADDRESS, provider)
   console.log("mintFunctionInputs: " + JSON.stringify(mintFunctionInputs))
   var finalMintFunctionInput
   if (mintFunctionInputs.length == 1) {
@@ -321,9 +269,6 @@ async function main() {
   } catch (e) {
     console.log(e)
   }
-
-  console.log("nonce3: " + JSON.stringify(walletTransactionMap.get(MIN_NONCE)))
-  console.log("4: " + JSON.stringify(walletTransactionMap.get(MAX_NONCE-1)))
 
 
   // // ====================================
@@ -539,6 +484,7 @@ async function main() {
     } else {
       // public mint not enabled
     }
+
   })
 }
 
