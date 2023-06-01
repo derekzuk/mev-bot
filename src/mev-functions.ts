@@ -1,19 +1,8 @@
-import { BigNumber, Contract, providers, Wallet } from "ethers";
-import {
-    providers as Providers,
-    utils as Utils,
-    ContractFactory,
-    PopulatedTransaction,
-    ContractFunction
-  } from "ethers"
-import { FlashbotsBundleProvider, FlashbotsTransaction, FlashbotsTransactionResponse, RelayResponseError } from "@flashbots/ethers-provider-bundle";
-import { GWEI, ETHER, encodeSignedTransaction, getMintFunctionInputs } from "./util/EthGeneralUtil"
-import { CARTOONS_ADDRESS, CARTOONS_ABI, CARTOONS_CONTRACT_OWNER, ALT_CARTOONS_CONTRACT_OWNER } from './cartoons-config'
+import { BigNumber } from "ethers";
+import { FlashbotsBundleProvider } from "@flashbots/ethers-provider-bundle";
+import { GWEI, getMintFunctionInputs } from "./util/EthGeneralUtil"
+import { ALT_CARTOONS_CONTRACT_OWNER } from './cartoons-config'
 import { 
-    sleep,
-    isFlashbotsTransactionResponse,
-    isRelayResponseError,
-    matchFlashbotsTransaction,
     bigIntMax,
     bigIntMin
   } from "./utils"
@@ -32,9 +21,6 @@ import {
     setFlashbotsMintBool,
     publicMintEnabled,
     setPublicMintEnabled,
-    INFURA_PROVIDER, 
-    INFURA_PROVIDER_KEY,
-    mintPriceOfSingleNFT,
     mintsPerWallet,
     totalSupply,
     setTotalSupply,
@@ -45,13 +31,10 @@ import {
     mintEthValue,
     provider,
     abiDecoder,
-    CHAIN_ID,
     web3,
     FLASHBOTS_ENDPOINT,
     CONTRACT_ADDRESS,
-    existingSupplyFunction,
     setExistingSupplyFunction,
-    publicMintEnabledFunction,
     setPublicMintEnabledFunction,
     CONTRACT_OWNER_ADDRESS,
     ENABLE_PUBLIC_MINT_SIGNATURE

@@ -1,13 +1,8 @@
-import { BigNumber, Contract, providers, Wallet } from "ethers";
+import { BigNumber, Contract, providers } from "ethers";
 import {
-    providers as Providers,
-    utils as Utils,
-    ContractFactory,
-    PopulatedTransaction,
-    ContractFunction
-  } from "ethers"
-import { CARTOONS_ADDRESS, CARTOONS_ABI, CARTOONS_CONTRACT_OWNER, ALT_CARTOONS_CONTRACT_OWNER } from './cartoons-config'
-import { GWEI, ETHER, encodeSignedTransaction, getMintFunctionInputs } from "./util/EthGeneralUtil"
+    PopulatedTransaction  } from "ethers"
+import { CARTOONS_ADDRESS, CARTOONS_ABI, CARTOONS_CONTRACT_OWNER } from './cartoons-config'
+import { GWEI } from "./util/EthGeneralUtil"
 export const abiDecoder = require('abi-decoder'); // https://github.com/ConsenSys/abi-decoder
 export const Web3 = require('web3')
 require('dotenv').config() // lets us use the config in the .env file

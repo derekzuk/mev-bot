@@ -1,4 +1,4 @@
-import { BigNumber, Contract, providers, Wallet } from "ethers";
+import { Wallet } from "ethers";
 import {
     provider
 } from "./variables"
