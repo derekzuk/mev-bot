@@ -85,9 +85,9 @@ import {
   subscribeToMempoolTransactions,
   watchEachNewBlock
 } from "./mev-functions"
-require('dotenv').config() // lets us use the config in the .env file
+require('dotenv').config() // this lets us use the config in the .env file
 
-// This app is based heavily on https://github.com/flashbots/searcher-minter
+// This application is based heavily on https://github.com/flashbots/searcher-minter
 var bigInt = require("big-integer");
 const { JSDOM } = require( "jsdom" );
 const { window } = new JSDOM( "" );
@@ -96,14 +96,15 @@ const ethers = require('ethers');
 const { encode } = require('rlp')
 var HDWalletProvider = require("@truffle/hdwallet-provider");
 
+// This is the function that executes when we run the 'npm start' command
 async function main() {
   await initialVariableSetup()
   await etherscanApiInteractions();
-  // initialSend(); // optional
-  // TODO: does this need an await?
+  // await initialSend(); // optional
   subscribeToMempoolTransactions(); // This runs concurrently with watchEachNewBlock()
-  // TODO: does this need an await?
   watchEachNewBlock(); // This runs concurrently with subscribeToMempoolTransactions()
+  
+  // The above functions may need an 'await'
 }
 
 main();

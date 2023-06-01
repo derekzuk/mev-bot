@@ -1,4 +1,11 @@
 import { BigNumber, Contract, providers, Wallet } from "ethers";
+import {
+    providers as Providers,
+    utils as Utils,
+    ContractFactory,
+    PopulatedTransaction,
+    ContractFunction
+  } from "ethers"
 import { FlashbotsBundleProvider, FlashbotsTransaction, FlashbotsTransactionResponse, RelayResponseError } from "@flashbots/ethers-provider-bundle";
 import { GWEI, ETHER, encodeSignedTransaction, getMintFunctionInputs } from "./util/EthGeneralUtil"
 import { CARTOONS_ADDRESS, CARTOONS_ABI, CARTOONS_CONTRACT_OWNER, ALT_CARTOONS_CONTRACT_OWNER } from './cartoons-config'
@@ -43,7 +50,9 @@ import {
     FLASHBOTS_ENDPOINT,
     CONTRACT_ADDRESS,
     existingSupplyFunction,
+    setExistingSupplyFunction,
     publicMintEnabledFunction,
+    setPublicMintEnabledFunction,
     CONTRACT_OWNER_ADDRESS,
     ENABLE_PUBLIC_MINT_SIGNATURE
   } from "./variables"
@@ -162,40 +171,42 @@ export async function etherscanApiInteractions() {
     }
 }
 
-// export async function initialSend() {
-//     if (publicMintEnabled == false) {
-//         try {
-//             publicMintEnabled = await ContractObject.isPublicMintActive()
-//             publicMintEnabledFunction = ContractObject.isPublicMintActive()
-//         } catch {
-//             console.log("not called isPublicMintActive()")
-//             try {
-//                 publicMintEnabled = await ContractObject._isActive()
-//                 publicMintEnabledFunction = ContractObject._isActive()
-//             } catch {
-//                 console.log("not called _isActive()")
-//             }
-//         }
-//     }
-//     if (totalSupply == -1) {
-//         totalSupply = await ContractObject.totalSupply()
-//         existingSupplyFunction = ContractObject.totalSupply()
-//     }
-//         console.log("publicMintEnabed: " + publicMintEnabled)
-//         console.log("totalSupply: " + totalSupply)
-//     if (publicMintEnabled && (totalSupply < maxSupply - 50)) {
-//         walletLoopMap.forEach((valueArr, wallet) => {
-//             var walletNumber = valueArr[0]
-//             var txIsMined = valueArr[1]
-//             var tx = valueArr[2]
-//             var txSent = valueArr[3]
+export async function initialSend() {
+    if (publicMintEnabled == false) {
+        try {
+            setPublicMintEnabled(await ContractObject.isPublicMintActive())
+            setPublicMintEnabledFunction(ContractObject.isPublicMintActive())
+        } catch {
+            console.log("not called isPublicMintActive()")
+            try {
+                setPublicMintEnabled(await ContractObject._isActive())
+                setPublicMintEnabledFunction(ContractObject._isActive())
+            } catch {
+                console.log("not called _isActive()")
+            }
+        }
+    }
+    if (totalSupply == -1) {
+        setTotalSupply(await ContractObject.totalSupply())
+        setExistingSupplyFunction(ContractObject.totalSupply())
+    }
+        console.log("publicMintEnabed: " + publicMintEnabled)
+        console.log("totalSupply: " + totalSupply)
+    if (publicMintEnabled && (totalSupply < maxSupply - 50)) {
+        // TODO: reconstruct walletLoopMap logic
+        const walletLoopMap = new Map();
+        walletLoopMap.forEach((valueArr, wallet) => {
+            var walletNumber = valueArr[0]
+            var txIsMined = valueArr[1]
+            var tx = valueArr[2]
+            var txSent = valueArr[3]
         
-//             // var sentTx = wallet.sendTransaction(tx)
-//             console.log("tx sent for wallet " + walletNumber)
-//             walletLoopMap.set(wallet, [walletNumber, txIsMined, tx, true])
-//         })
-//     }
-// }
+            // var sentTx = wallet.sendTransaction(tx)
+            console.log("tx sent for wallet " + walletNumber)
+            walletLoopMap.set(wallet, [walletNumber, txIsMined, tx, true])
+        })
+    }
+}
 
 // You either need to know the specific mint time or have your own node to use this section of code
 // Infura limits the number of requests you can make per day
@@ -329,7 +340,7 @@ export async function watchEachNewBlock() {
     // ================================
     // SENDING MINT TRANSACTIONS
     // ================================
-    sendMintTransactions();
+    await sendMintTransactions();
   })
 }
 

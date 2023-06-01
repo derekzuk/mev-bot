@@ -1,4 +1,11 @@
 import { BigNumber, Contract, providers, Wallet } from "ethers";
+import {
+    providers as Providers,
+    utils as Utils,
+    ContractFactory,
+    PopulatedTransaction,
+    ContractFunction
+  } from "ethers"
 import { CARTOONS_ADDRESS, CARTOONS_ABI, CARTOONS_CONTRACT_OWNER, ALT_CARTOONS_CONTRACT_OWNER } from './cartoons-config'
 import { GWEI, ETHER, encodeSignedTransaction, getMintFunctionInputs } from "./util/EthGeneralUtil"
 export const abiDecoder = require('abi-decoder'); // https://github.com/ConsenSys/abi-decoder
@@ -49,7 +56,13 @@ abiDecoder.addABI(CARTOONS_ABI);
 // ==============================================
 export let CONTRACT_ADDRESS = CARTOONS_ADDRESS
 export let existingSupplyFunction
+export function setExistingSupplyFunction(value) {
+    existingSupplyFunction = value;
+}
 export let publicMintEnabledFunction
+export function setPublicMintEnabledFunction(value) {
+    publicMintEnabledFunction = value;
+}
 // var CONTRACT_ABI = [] // copy-paste abi from etherscan if available, otherwise set to nullArray
 // var contractObject // IGNORE
 // if (CONTRACT_ABI == nullArray) {} else { contractObject = new Contract(CONTRACT_ADDRESS, CONTRACT_ABI, provider)} // IGNORE
@@ -85,10 +98,8 @@ export function setHolyGrailTxSent(value) {
 }
 export let ContractObject = new Contract(CONTRACT_ADDRESS, CARTOONS_ABI, provider)
 // nonce, [isMined, tx, isSent]
-// let walletTransactionMap: Map<Number, [Boolean, PopulatedTransaction, Boolean]> = new Map(); // we can use this if we only need to make transactions from a single wallet
-export let walletTransactionMap = new Map(); // we can use this if we only need to make transactions from a single wallet
-// let gasOverridePrice: bigint
-export let gasOverridePrice
+export let walletTransactionMap: Map<Number, [Boolean, PopulatedTransaction, Boolean]> = new Map(); // we can use this if we only need to make transactions from a single wallet
+export let gasOverridePrice: bigint
 export function setGasOverridePrice(value) {
     gasOverridePrice = value;
 }
