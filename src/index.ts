@@ -12,6 +12,7 @@ import { TransactionRequest } from "@ethersproject/abstract-provider";
 import { CARTOONS_ADDRESS, CARTOONS_ABI, CARTOONS_CONTRACT_OWNER, ALT_CARTOONS_CONTRACT_OWNER } from './cartoons-config'
 import { env } from "process";
 import { GWEI, ETHER, encodeSignedTransaction, getMintFunctionInputs } from "./util/EthGeneralUtil"
+import { sleep, isFlashbotsTransactionResponse, isRelayResponseError, matchFlashbotsTransaction, bigIntMax, bigIntMin } from "./utils"
 import { 
   blocknum,
   setBlocknum,
@@ -82,34 +83,8 @@ const ethers = require('ethers');
 const { encode } = require('rlp')
 var HDWalletProvider = require("@truffle/hdwallet-provider");
 
-// this appears to work async
-let sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
-
-// TODO: move to a Utils file
-function isFlashbotsTransactionResponse(obj: any): obj is FlashbotsTransactionResponse {
-  return obj.bundleTransactions !== undefined
-}
-
-function isRelayResponseError(obj: any): obj is RelayResponseError {
-  return obj.error !== undefined
-}
-
-function matchFlashbotsTransaction(flashbotsTransaction: FlashbotsTransaction) {
-  if (isFlashbotsTransactionResponse(flashbotsTransaction)) {      
-      console.log("FlashbotsTransactionResponse. bundleTransactions.hash: " + flashbotsTransaction.bundleTransactions.map(x => x.hash))
-  }
-  if (isRelayResponseError(flashbotsTransaction)) {
-    console.log("RelayResponseError")
-    console.log("error.message: " + flashbotsTransaction.error.message)
-    console.log("error.code: " + flashbotsTransaction.error.code)
-  }
-}
-
-const bigIntMax = (...args) => args.reduce((m, e) => e > m ? e : m); // calculate max
-const bigIntMin = (...args) => args.reduce((m, e) => e < m ? e : m); // calculate min
-
 async function main() {
-  const flashbotsProvider = await FlashbotsBundleProvider.create(provider, wallet1, FLASHBOTS_ENDPOINT) // TODO: use my personal wallet?
+  const flashbotsProvider = await FlashbotsBundleProvider.create(provider, wallet1, FLASHBOTS_ENDPOINT) // TODO: use my personal wallet to build reputation?
 
     // Initial wallet population
     var baseMintTx
