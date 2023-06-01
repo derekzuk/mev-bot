@@ -4,7 +4,7 @@ import {
   etherscanApiInteractions,
   subscribeToMempoolTransactions,
   watchEachNewBlock
-} from "./mev-functions"
+} from "./mevbot/mev-functions"
 require('dotenv').config() // this lets us use the config in the .env file
 
 // This application is based heavily on https://github.com/flashbots/searcher-minter

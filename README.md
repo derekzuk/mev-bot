@@ -15,7 +15,7 @@ truffle compile
 ```shell
 npm start
 ```
-index.ts will execute
+botExecutor.ts will execute
  
 #
  If you want to deploy your contracts to goerli or mainnet, you can use truffle. Add a migrations file to the /migrations folder and run the following. Note that this uses config in truffle-config.js:

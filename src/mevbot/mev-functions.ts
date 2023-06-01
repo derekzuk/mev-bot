@@ -1,11 +1,11 @@
 import { BigNumber } from "ethers";
 import { FlashbotsBundleProvider } from "@flashbots/ethers-provider-bundle";
-import { GWEI, getMintFunctionInputs } from "./util/EthGeneralUtil"
-import { ALT_CARTOONS_CONTRACT_OWNER } from './cartoons-config'
+import { GWEI, getMintFunctionInputs } from "../util/EthGeneralUtil"
+import { ALT_CARTOONS_CONTRACT_OWNER } from './config/cartoons-config'
 import { 
     bigIntMax,
     bigIntMin
-  } from "./utils"
+  } from "./mev-function-utils"
 import { 
     blocknum,
     setBlocknum,
@@ -38,7 +38,7 @@ import {
     setPublicMintEnabledFunction,
     CONTRACT_OWNER_ADDRESS,
     ENABLE_PUBLIC_MINT_SIGNATURE
-  } from "./variables"
+  } from "./vars/variables"
   import {
     wallet1,
     // wallet2,
@@ -60,7 +60,7 @@ import {
     // wallet18,
     // wallet19,
     // wallet20,
-  } from "./wallets"
+  } from "./vars/wallets"
   require('dotenv').config() // lets us use the config in the .env file
 
 export async function initialVariableSetup() {
