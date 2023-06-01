@@ -12,7 +12,67 @@ import { TransactionRequest } from "@ethersproject/abstract-provider";
 import { CARTOONS_ADDRESS, CARTOONS_ABI, CARTOONS_CONTRACT_OWNER, ALT_CARTOONS_CONTRACT_OWNER } from './cartoons-config'
 import { env } from "process";
 import { GWEI, ETHER, encodeSignedTransaction, getMintFunctionInputs } from "./util/EthGeneralUtil"
+import { 
+  blocknum,
+  setBlocknum,
+  MIN_NONCE,
+  MAX_NONCE,
+  holyGrailTxSent,
+  setHolyGrailTxSent,
+  ContractObject,
+  walletTransactionMap,
+  gasOverridePrice,
+  setGasOverridePrice,
+  flashbotsMintBool,
+  setFlashbotsMintBool,
+  publicMintEnabled,
+  setPublicMintEnabled,
+  INFURA_PROVIDER, 
+  INFURA_PROVIDER_KEY,
+  mintPriceOfSingleNFT,
+  mintsPerWallet,
+  totalSupply,
+  setTotalSupply,
+  initialSendGasPrice,
+  maxSupply,
+  maxGasVar,
+  gasToAddToBlockAvg,
+  mintEthValue,
+  provider,
+  abiDecoder,
+  CHAIN_ID,
+  web3,
+  FLASHBOTS_ENDPOINT,
+  CONTRACT_ADDRESS,
+  existingSupplyFunction,
+  publicMintEnabledFunction,
+  CONTRACT_OWNER_ADDRESS,
+  ENABLE_PUBLIC_MINT_SIGNATURE
+} from "./variables"
+import {
+  wallet1,
+  // wallet2,
+  // wallet3,
+  // wallet4,
+  // wallet5,
+  // wallet6,
+  // wallet7,
+  // wallet8,
+  // wallet9,
+  // wallet10,
+  // wallet11,
+  // wallet12,
+  // wallet13,
+  // wallet14,
+  // wallet15,
+  // wallet16,
+  // wallet17,
+  // wallet18,
+  // wallet19,
+  // wallet20,
+} from "./wallets"
 require('dotenv').config() // lets us use the config in the .env file
+
 // This app is based heavily on https://github.com/flashbots/searcher-minter
 var bigInt = require("big-integer");
 const { JSDOM } = require( "jsdom" );
@@ -20,124 +80,7 @@ const { window } = new JSDOM( "" );
 const jQuery = require( "jquery" )( window );
 const ethers = require('ethers');
 const { encode } = require('rlp')
-const abiDecoder = require('abi-decoder'); // https://github.com/ConsenSys/abi-decoder
-const Web3 = require('web3')
 var HDWalletProvider = require("@truffle/hdwallet-provider");
-
-// Environment specific variables
-var CHAIN_ID;
-var web3;
-var FLASHBOTS_ENDPOINT;
-if (process.env.ENVIRONMENT == "mainnet") {
-  CHAIN_ID = 1;
-  web3 = new Web3(process.env.WSS_INFURA_MAINNET_URL);
-  FLASHBOTS_ENDPOINT = "https://relay.flashbots.net/";
-} else if (process.env.ENVIRONMENT == "goerli") {
-  CHAIN_ID = 5;
-  web3 = new Web3(process.env.WSS_INFURA_GOERLI_URL_99NA);
-  FLASHBOTS_ENDPOINT = "https://relay-goerli.flashbots.net";
-}
-const provider = new providers.JsonRpcProvider("http://localhost:8545", CHAIN_ID) // geth node
-// const web3 = new Web3("http://localhost:8545") // mainnet
-// const web3 = new Web3.providers.WebsocketProvider('ws://127.0.0.1:3334'); // geth node
-
-var nullArray = []
-
-// ==============================================
-// VARIABLES TO SET AHEAD OF TIME
-// ==============================================
-var INFURA_PROVIDER = process.env.NA_INFURA_PROVIDER_A_99NA
-var INFURA_PROVIDER_KEY = process.env.NA_INFURA_PROVIDER_KEY_99NA
-var mintPriceOfSingleNFT = BigNumber.from(GWEI * 70000000n)
-var mintsPerWallet = 2
-// use "-1" if total supply function is called totalSupply()
-var totalSupply = -1
-var initialSendGasPrice = GWEI * 100n
-var maxSupply = 7777
-var maxGasVar = BigNumber.from(GWEI * 555n)
-var gasToAddToBlockAvg = GWEI * 50n // this value is added to the avg block gas that is ultimately used in your mint transactions
-var mintEthValue = mintPriceOfSingleNFT.mul(mintsPerWallet) // IGNORE
-// const provider = new providers.InfuraProvider(CHAIN_ID, [INFURA_PROVIDER, INFURA_PROVIDER_KEY]) // IGNORE
-abiDecoder.addABI(CARTOONS_ABI);
-
-// ==============================================
-// VARIABLES TO SET LIVE (if abi provided)
-// ==============================================
-var CONTRACT_ADDRESS = CARTOONS_ADDRESS
-var existingSupplyFunction
-var publicMintEnabledFunction
-// var CONTRACT_ABI = [] // copy-paste abi from etherscan if available, otherwise set to nullArray
-// var contractObject // IGNORE
-// if (CONTRACT_ABI == nullArray) {} else { contractObject = new Contract(CONTRACT_ADDRESS, CONTRACT_ABI, provider)} // IGNORE
-
-// ==============================================
-// VARIABLES TO SET LIVE (if no abi)
-// ==============================================
-// var CONTRACT_ADDRESS = ""
-// var CONTRACT_ABI = nullArray // IGNORE
-// var successfulMintInputData = "0x15ce4ede0000000000000000000000000000000000000000000000000000000000000001" // Only needed if you cannot populate CONTRACT_ABI:
-// var contractObject // IGNORE
-// if (CONTRACT_ABI == nullArray) {} else {contractObject = new Contract(CONTRACT_ADDRESS, CONTRACT_ABI, provider)} // IGNORE
-// var mintFunction // IGNORE
-// var publicMintEnabledFunction = true
-// var existingSupplyFunction // IGNORE
-// var contractAbiProvided = (CONTRACT_ABI !== nullArray) // IGNORE
-
-var CONTRACT_OWNER_ADDRESS = CARTOONS_CONTRACT_OWNER // IGNORE. only matters if watching mempool
-var ENABLE_PUBLIC_MINT_SIGNATURE = "0x2b707c71" // IGNORE. only matters if watching mempool
-
-// WT_PRIVATE_KEY_1 refers to the private key set up in the .env file
-// const testWallet = new Wallet(process.env.WALLET_PRIVATE_KEY, provider)
-const wallet1 = new Wallet(process.env.WT_PRIVATE_KEY_1, provider)
-const wallet2 = new Wallet(process.env.WT_PRIVATE_KEY_2, provider)
-const wallet3 = new Wallet(process.env.WT_PRIVATE_KEY_3, provider)
-const wallet4 = new Wallet(process.env.WT_PRIVATE_KEY_4, provider)
-const wallet5 = new Wallet(process.env.WT_PRIVATE_KEY_5, provider)
-const wallet6 = new Wallet(process.env.WT_PRIVATE_KEY_6, provider)
-const wallet7 = new Wallet(process.env.WT_PRIVATE_KEY_7, provider)
-const wallet8 = new Wallet(process.env.WT_PRIVATE_KEY_8, provider)
-const wallet9 = new Wallet(process.env.WT_PRIVATE_KEY_9, provider)
-const wallet10 = new Wallet(process.env.WT_PRIVATE_KEY_10, provider)
-const wallet11 = new Wallet(process.env.WT_PRIVATE_KEY_11, provider)
-const wallet12 = new Wallet(process.env.WT_PRIVATE_KEY_12, provider)
-const wallet13 = new Wallet(process.env.WT_PRIVATE_KEY_13, provider)
-const wallet14 = new Wallet(process.env.WT_PRIVATE_KEY_14, provider)
-const wallet15 = new Wallet(process.env.WT_PRIVATE_KEY_15, provider)
-const wallet16 = new Wallet(process.env.WT_PRIVATE_KEY_16, provider)
-const wallet17 = new Wallet(process.env.WT_PRIVATE_KEY_17, provider)
-const wallet18 = new Wallet(process.env.WT_PRIVATE_KEY_18, provider)
-const wallet19 = new Wallet(process.env.WT_PRIVATE_KEY_19, provider)
-const wallet20 = new Wallet(process.env.WT_PRIVATE_KEY_20, provider)
-// const wallet21 = new Wallet(process.env.WT_PRIVATE_KEY_21, provider)
-// const wallet22 = new Wallet(process.env.WT_PRIVATE_KEY_22, provider)
-// const wallet23 = new Wallet(process.env.WT_PRIVATE_KEY_23, provider)
-// const wallet24 = new Wallet(process.env.WT_PRIVATE_KEY_24, provider)
-// const wallet25 = new Wallet(process.env.WT_PRIVATE_KEY_25, provider)
-// const wallet26 = new Wallet(process.env.WT_PRIVATE_KEY_26, provider)
-// const wallet27 = new Wallet(process.env.WT_PRIVATE_KEY_27, provider)
-// const wallet28 = new Wallet(process.env.WT_PRIVATE_KEY_28, provider)
-// const wallet29 = new Wallet(process.env.WT_PRIVATE_KEY_29, provider)
-// const wallet30 = new Wallet(process.env.WT_PRIVATE_KEY_30, provider)
-// const wallet31 = new Wallet(process.env.WT_PRIVATE_KEY_31, provider)
-// const wallet32 = new Wallet(process.env.WT_PRIVATE_KEY_32, provider)
-// const wallet33 = new Wallet(process.env.WT_PRIVATE_KEY_33, provider)
-// const wallet34 = new Wallet(process.env.WT_PRIVATE_KEY_34, provider)
-// const wallet35 = new Wallet(process.env.WT_PRIVATE_KEY_35, provider)
-// const wallet36 = new Wallet(process.env.WT_PRIVATE_KEY_36, provider)
-// const wallet37 = new Wallet(process.env.WT_PRIVATE_KEY_37, provider)
-// const wallet38 = new Wallet(process.env.WT_PRIVATE_KEY_38, provider)
-// const wallet39 = new Wallet(process.env.WT_PRIVATE_KEY_39, provider)
-// const wallet40 = new Wallet(process.env.WT_PRIVATE_KEY_40, provider)
-// const wallet41 = new Wallet(process.env.WT_PRIVATE_KEY_41, provider)
-// const wallet42 = new Wallet(process.env.WT_PRIVATE_KEY_42, provider)
-// const wallet43 = new Wallet(process.env.WT_PRIVATE_KEY_43, provider)
-// const wallet44 = new Wallet(process.env.WT_PRIVATE_KEY_44, provider)
-// const wallet45 = new Wallet(process.env.WT_PRIVATE_KEY_45, provider)
-// const wallet46 = new Wallet(process.env.WT_PRIVATE_KEY_46, provider)
-// const wallet47 = new Wallet(process.env.WT_PRIVATE_KEY_47, provider)
-// const wallet48 = new Wallet(process.env.WT_PRIVATE_KEY_48, provider)
-// const wallet49 = new Wallet(process.env.WT_PRIVATE_KEY_49, provider)
-// const wallet50 = new Wallet(process.env.WT_PRIVATE_KEY_50, provider)
 
 // this appears to work async
 let sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
@@ -165,21 +108,7 @@ function matchFlashbotsTransaction(flashbotsTransaction: FlashbotsTransaction) {
 const bigIntMax = (...args) => args.reduce((m, e) => e > m ? e : m); // calculate max
 const bigIntMin = (...args) => args.reduce((m, e) => e < m ? e : m); // calculate min
 
-// ====================================
-// GLOBAL VARIABLES
-// ====================================
-var blocknum = 6457676
-var MIN_NONCE = 3
-var MAX_NONCE = 18
-var holyGrailTxSent = false
-var ContractObject = new Contract(CONTRACT_ADDRESS, CARTOONS_ABI, provider)
-// nonce, [isMined, tx, isSent]
-var walletTransactionMap: Map<Number, [Boolean, PopulatedTransaction, Boolean]> = new Map(); // we can use this if we only need to make transactions from a single wallet
-var gasOverridePrice: bigint
-var flashbotsMintBool = false
-var publicMintEnabled = false // we will assume public mint is enabled if the contract abi cannot be provided
-
-async function main() {  
+async function main() {
   const flashbotsProvider = await FlashbotsBundleProvider.create(provider, wallet1, FLASHBOTS_ENDPOINT) // TODO: use my personal wallet?
 
     // Initial wallet population
@@ -332,7 +261,7 @@ async function main() {
                       // and use it to populate the flashbotsMintBool var                      
                       const decodedData = abiDecoder.decodeMethod(transaction.input);
                       console.log("JSON.stringify(decodedData): " + JSON.stringify(decodedData))
-                      flashbotsMintBool = decodedData.params[0].value
+                      setFlashbotsMintBool(decodedData.params[0].value)
                       console.log("flashbotsMintBool: " + flashbotsMintBool)
                       
                       // TODO: TypeError: Cannot mix BigInt and other types, use explicit conversions
@@ -373,7 +302,7 @@ async function main() {
                               // console.log("sentTestTx: "+ JSON.stringify(sentTestTx));
                               walletTransactionMap.set(i, [false,hgTx,true])
                             }
-                            holyGrailTxSent = true
+                            setHolyGrailTxSent(true);
                           // }
                       }               
                 }
@@ -393,7 +322,7 @@ async function main() {
   // =================================
   provider.on('block', async (blockNumber) => {
     console.log("blockNumber: " + blockNumber)
-    blocknum = blockNumber
+    setBlocknum(blockNumber);
     const blockWithTransactions = await provider.getBlockWithTransactions(blockNumber)
     const transactions = blockWithTransactions.transactions
 
@@ -407,10 +336,10 @@ async function main() {
     const sum = slicedGasPrice.reduce((a, b) => a + b, 0);
     const lowAvg = (sum / slicedGasPrice.length) || (GWEI * 100n);
     const truncated = Math.trunc(Number(lowAvg))
-    gasOverridePrice = BigInt(truncated) + gasToAddToBlockAvg
+    setGasOverridePrice(BigInt(truncated) + gasToAddToBlockAvg)
     console.log("gasOverridePrice: " + gasOverridePrice)
 
-    publicMintEnabled = await ContractObject.isPublicMintActive()
+    setPublicMintEnabled(await ContractObject.isPublicMintActive())
     console.log("publicMintEnabled: " + publicMintEnabled)
 
     // Check if our mint transactions have been mined in
@@ -446,7 +375,7 @@ async function main() {
     // ================================
     if (publicMintEnabled) {
       // loop through each wallet and determine if we want to send a mint tx
-      totalSupply = await ContractObject.totalSupply()
+      setTotalSupply(await ContractObject.totalSupply())
       console.log("totalSupply: " + totalSupply)
       for (let i = MIN_NONCE; i < MAX_NONCE; i++) {
         var walletTransactionMapValues = walletTransactionMap.get(i)
