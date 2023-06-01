@@ -162,10 +162,6 @@ export async function etherscanApiInteractions() {
     }
 }
 
-
-// ====================================
-// INITIAL SEND
-// ====================================
 // export async function initialSend() {
 //     if (publicMintEnabled == false) {
 //         try {
@@ -201,9 +197,6 @@ export async function etherscanApiInteractions() {
 //     }
 // }
 
-// ====================================
-// SUBSCRIBE TO MEMPOOL TRANSACTIONS
-// ====================================
 // You either need to know the specific mint time or have your own node to use this section of code
 // Infura limits the number of requests you can make per day
 export async function subscribeToMempoolTransactions() {

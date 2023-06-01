@@ -97,32 +97,13 @@ const { encode } = require('rlp')
 var HDWalletProvider = require("@truffle/hdwallet-provider");
 
 async function main() {
-  // =================================
-  // INITIAL VARIABLE SETUP
-  // =================================
   await initialVariableSetup()
-
-  // =================================
-  // ETHERSCAN API INTERACTIONS
-  // =================================
   await etherscanApiInteractions();
-
-  // =================================
-  // OPTIONAL INITIAL SEND TRANSACTION
-  // =================================
-  // initialSend();
-
-  // =================================
-  // SUBSCRIBE TO MEMPOOL TRANSACTIONS (runs concurrently with watchEachNewBlock())
-  // =================================
+  // initialSend(); // optional
   // TODO: does this need an await?
-  subscribeToMempoolTransactions();
-
-  // =================================
-  //      WATCH EACH NEW BLOCK
-  // =================================
+  subscribeToMempoolTransactions(); // This runs concurrently with watchEachNewBlock()
   // TODO: does this need an await?
-  watchEachNewBlock();
+  watchEachNewBlock(); // This runs concurrently with subscribeToMempoolTransactions()
 }
 
 main();
