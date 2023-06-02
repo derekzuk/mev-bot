@@ -1,6 +1,7 @@
 import { BigNumber, Contract, providers } from "ethers";
 import {
     PopulatedTransaction  } from "ethers"
+import { WalletTransactionDetail } from "../model/wallet-transaction";
 import { CARTOONS_ADDRESS, CARTOONS_ABI, CARTOONS_CONTRACT_OWNER } from '../config/cartoons-config'
 import { GWEI } from "../../util/eth-general-util"
 export const abiDecoder = require('abi-decoder'); // https://github.com/ConsenSys/abi-decoder
@@ -92,8 +93,7 @@ export function setHolyGrailTxSent(value) {
     holyGrailTxSent = value;
 }
 export let ContractObject = new Contract(CONTRACT_ADDRESS, CARTOONS_ABI, provider)
-// nonce, [isMined, tx, isSent]
-export let walletTransactionMap: Map<Number, [Boolean, PopulatedTransaction, Boolean]> = new Map(); // we can use this if we only need to make transactions from a single wallet
+export let walletTransactionMap: Map<Number, WalletTransactionDetail> = new Map(); // we can use this if we only need to make transactions from a single wallet
 export let gasOverridePrice: bigint
 export function setGasOverridePrice(value) {
     gasOverridePrice = value;

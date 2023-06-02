@@ -61,6 +61,7 @@ import {
     // wallet19,
     // wallet20,
   } from "./vars/wallets"
+import { WalletTransactionDetail } from "./model/wallet-transaction";
   require('dotenv').config() // lets us use the config in the .env file
 
 export async function initialVariableSetup() {
@@ -70,7 +71,12 @@ export async function initialVariableSetup() {
     var baseMintTx
     // key refers to the wallet nonce
     for (let i = MIN_NONCE; i < MAX_NONCE; i++) {
-      walletTransactionMap.set(i,[false, baseMintTx, false])
+      let walletTransaction: WalletTransactionDetail = {
+        isMined: false,
+        tx: baseMintTx,
+        isSent: false
+      }
+      walletTransactionMap.set(i,walletTransaction)
     }
 }
 
@@ -114,7 +120,12 @@ export async function etherscanApiInteractions() {
             mintTransactionFromEtherscan.nonce = i
             mintTransactionFromEtherscan.gasPrice = BigNumber.from(initialSendGasPrice)
             mintTransactionFromEtherscan.gasLimit = BigNumber.from(140000n)
-            walletTransactionMap.set(i, [false, mintTransactionFromEtherscan, false]);
+            let walletTransaction: WalletTransactionDetail = {
+              isMined: false,
+              tx: mintTransactionFromEtherscan,
+              isSent: false
+            }
+            walletTransactionMap.set(i, walletTransaction);
           }
         } else if ((finalMintFunctionInput.inputs !== undefined && finalMintFunctionInput.inputs !== null && finalMintFunctionInput.inputs.length == 2)) {
           // look for type address and type uint
@@ -142,7 +153,12 @@ export async function etherscanApiInteractions() {
             mintTransactionFromEtherscan.nonce = i            
             mintTransactionFromEtherscan.gasPrice = BigNumber.from(initialSendGasPrice)
             mintTransactionFromEtherscan.gasLimit = BigNumber.from(140000n)
-            walletTransactionMap.set(i, [false, mintTransactionFromEtherscan, false]);            
+            let walletTransaction: WalletTransactionDetail = {
+              isMined: false,
+              tx: mintTransactionFromEtherscan,
+              isSent: false
+            }
+            walletTransactionMap.set(i, walletTransaction);            
           }
         }
       }
@@ -252,7 +268,12 @@ export async function subscribeToMempoolTransactions() {
                                 hgTx.gasPrice = holyGrailGasPrice
                                 // var sentTestTx = wallet1.sendTransaction(hgTx) 
                                 // console.log("sentTestTx: "+ JSON.stringify(sentTestTx));
-                                walletTransactionMap.set(i, [false,hgTx,true])
+                                let walletTransaction: WalletTransactionDetail = {
+                                  isMined: false,
+                                  tx: hgTx,
+                                  isSent: true
+                                }
+                                walletTransactionMap.set(i, walletTransaction)
                               }
                               setHolyGrailTxSent(true);
                             // }
@@ -293,14 +314,14 @@ export async function watchEachNewBlock() {
     console.log("publicMintEnabled: " + publicMintEnabled)
 
     // Check if our mint transactions have been mined in
-    function callback_Original() {
+    function checkIfMintTransactionsMined() {
       return new Promise((resolve) => {
         transactions.map(function (t) {
           if (wallet1.address.toLowerCase().includes(t.from.toLowerCase())) {
             var txNonce = t.nonce
             var walletTransactionMapValues = walletTransactionMap.get(txNonce)
             if (walletTransactionMapValues !== null && walletTransactionMapValues !== undefined) {
-              walletTransactionMapValues[0] = true // set isMinedBoolean = true for this wallet
+              walletTransactionMapValues.isMined = true;
               walletTransactionMap.set(txNonce, walletTransactionMapValues)
               console.log("Mint mined in for txNonce " + txNonce)
             } else {
@@ -311,12 +332,14 @@ export async function watchEachNewBlock() {
         resolve(true)
       });
     }
-    await callback_Original()
-    .then(response => {
+
+    // We wait for this check to run before triggering the sendMintTransactions() function
+    await checkIfMintTransactionsMined()
+      .then(response => {
     })
     .catch(error => {
-    // Error
-    console.log(error);
+        // Error
+      console.log(error);
     });
 
     // ================================
@@ -332,31 +355,33 @@ async function sendMintTransactions() {
         setTotalSupply(await ContractObject.totalSupply())
         console.log("totalSupply: " + totalSupply)
         for (let i = MIN_NONCE; i < MAX_NONCE; i++) {
-          var walletTransactionMapValues = walletTransactionMap.get(i)
-          var txIsMined = walletTransactionMapValues[0]
-          var tx = walletTransactionMapValues[1]
-          var txSent = walletTransactionMapValues[2]
+          var walletTransaction = walletTransactionMap.get(i)
     
-          if (!txIsMined && holyGrailTxSent) {
-            if (!txSent && (totalSupply < maxSupply - 300) || ((BigNumber.from(tx.gasPrice).lt(gasOverridePrice)) && (totalSupply < maxSupply - 50))) {
+          if (!walletTransaction.isMined && holyGrailTxSent) {
+            if (!walletTransaction.isSent && (totalSupply < maxSupply - 300) || ((BigNumber.from(walletTransaction.tx.gasPrice).lt(gasOverridePrice)) && (totalSupply < maxSupply - 50))) {
               console.log("Possibly sending tx for nonce " + i)                
-              if (!txSent) {
+              if (!walletTransaction.isSent) {
                 const maxWillingGas = bigIntMin(gasOverridePrice, maxGasVar)
-                const calculatedGas = bigIntMax(maxWillingGas, tx.gasPrice) // RISK. if max gas is still not enough to get mined in
-                tx.gasPrice = BigNumber.from(calculatedGas)
+                const calculatedGas = bigIntMax(maxWillingGas, walletTransaction.tx.gasPrice) // RISK. if max gas is still not enough to get mined in
+                walletTransaction.tx.gasPrice = BigNumber.from(calculatedGas)
               } else {
                 const calculatedGas = bigIntMin(gasOverridePrice, maxGasVar) // RISK. if max gas is still not enough to get mined in
-                tx.gasPrice = BigNumber.from(calculatedGas)
+                walletTransaction.tx.gasPrice = BigNumber.from(calculatedGas)
               }                
               // tx.nonce = 0 // This bot assumes you are using fresh wallets
-              console.log("tx to send: " + JSON.stringify(tx))
-              // var sentTx = wallet1.sendTransaction(tx)
-              // console.log("tx sent for nonce " + i)
-              walletTransactionMap.set(i, [txIsMined, tx, true])
+              console.log("tx to send: " + JSON.stringify(walletTransaction.tx))
+              var sentTx = wallet1.sendTransaction(walletTransaction.tx)
+              console.log("tx sent for nonce " + i + ". Details: " + JSON.stringify(sentTx))
+              let newWalletTransaction: WalletTransactionDetail = {
+                isMined: walletTransaction.isMined,
+                tx: walletTransaction.tx,
+                isSent: true
+              }
+              walletTransactionMap.set(i, newWalletTransaction)
             } else {
-              console.log("tx.gasPrice.lt(gasOverridePrice): " + tx.gasPrice.lt(gasOverridePrice));
+              console.log("tx.gasPrice.lt(gasOverridePrice): " + walletTransaction.tx.gasPrice.lt(gasOverridePrice));
               console.log("gas price too low or totalSupply too high to resend tx. gasOverride: " + BigNumber.from(gasOverridePrice) 
-              + ", tx.gasPrice: " + BigNumber.from(tx.gasPrice) 
+              + ", tx.gasPrice: " + BigNumber.from(walletTransaction.tx.gasPrice) 
               + ", totalSupply: " + totalSupply 
               + ", nonce: " + i)
             }
