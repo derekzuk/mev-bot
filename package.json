@@ -2,9 +2,9 @@
   "name": "searcher-minter",
   "version": "1.0.0",
   "description": "",
-  "main": "botExecutor.ts",
+  "main": "bot-executor.ts",
   "scripts": {
-    "start": "npx ts-node --project tsconfig.json src/botExecutor.ts",
+    "start": "npx ts-node --project tsconfig.json src/bot-executor.ts",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "",
