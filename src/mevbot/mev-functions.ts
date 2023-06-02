@@ -1,6 +1,6 @@
 import { BigNumber } from "ethers";
 import { FlashbotsBundleProvider } from "@flashbots/ethers-provider-bundle";
-import { GWEI, getMintFunctionInputs } from "../util/eth-general-util"
+import { GWEI, getMintFunctionInputs } from "./util/eth-general-util"
 import { ALT_CARTOONS_CONTRACT_OWNER } from './config/cartoons-config'
 import { 
     bigIntMax,
