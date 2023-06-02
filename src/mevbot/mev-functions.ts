@@ -1,4 +1,5 @@
 import { BigNumber } from "ethers";
+import { TransactionResponse } from "@ethersproject/abstract-provider"
 import { FlashbotsBundleProvider } from "@flashbots/ethers-provider-bundle";
 import { GWEI, getMintFunctionInputs } from "./util/eth-general-util"
 import { ALT_CARTOONS_CONTRACT_OWNER } from './config/cartoons-config'
@@ -215,73 +216,8 @@ export async function subscribeToMempoolTransactions() {
           try {
               web3.eth.getTransaction(transactionHash)
               .then(async function (transaction) {
-                if (transaction !== null && transaction.hash !== null && transaction.hash !== undefined) {
-                  var from = transaction.from
-                  var to = transaction.to
-                  // look for the transaction that sets the public mint live from the contract owner
-                  if (to !== null && to !== undefined && from !== null && from !== undefined
-                    && transaction.to.toLowerCase().includes(CONTRACT_ADDRESS)
-                    && (from.toLowerCase().includes(CONTRACT_OWNER_ADDRESS) || from.toLowerCase().includes(ALT_CARTOONS_CONTRACT_OWNER))
-                    && transaction.input.toLowerCase().includes(ENABLE_PUBLIC_MINT_SIGNATURE)) { // publicMintEnabled signature
-                        console.log("isActive() tx detected!")
-  
-                        // TODO: we could place logic here to extract details from this tx if we have time
-                        // and use it to populate the flashbotsMintBool var                      
-                        const decodedData = abiDecoder.decodeMethod(transaction.input);
-                        console.log("JSON.stringify(decodedData): " + JSON.stringify(decodedData))
-                        setFlashbotsMintBool(decodedData.params[0].value)
-                        console.log("flashbotsMintBool: " + flashbotsMintBool)
-                        
-                        // TODO: TypeError: Cannot mix BigInt and other types, use explicit conversions
-                        if (flashbotsMintBool && !holyGrailTxSent) {
-                          var holyGrailGasPrice       
-                          if (transaction.gasPrice !== null || transaction.gasPrice !== undefined) {
-                            holyGrailGasPrice = transaction.gasPrice
-                          } else {
-                            holyGrailGasPrice = transaction.maxFeePerGas
-                          }
-                          
-                            // // We test a flashbots bundle with the mint enabled function, and if it works then we assume its good and blast off mint transactions
-                            // const raw = encodeSignedTransaction(transaction, web3)
-                            // const wallet1tx = walletLoopMap.get(wallet1)[2]
-                            // const bundledTransactions = [
-                            //   {
-                            //     signedTransaction: raw // serialized signed transaction hex
-                            //   },
-                            //   {
-                            //     signer: wallet1,
-                            //     transaction: wallet1tx
-                            //   }
-                            // ];                        
-                            // const signedBundle = await flashbotsProvider.signBundle(bundledTransactions) // does it simulate when you sign?
-                            // const simulation = await flashbotsProvider.simulate(signedBundle, blocknum + 1 ) // TODO: skip simulation?
-                            // if ("error" in simulation || simulation.firstRevert !== undefined) {
-                            //   console.log(`Simulation Error, skipping`)
-                            //   console.log("simulation error: " + JSON.stringify(simulation))
-                            // } else {
-                            //   console.log("successful simulation. sending bundle");
-  
-                              // SEND HOLY GRAIL TRANSACTIONS
-                              console.log("sending holy grail transactions")
-                              for (let i = MIN_NONCE; i < MAX_NONCE; i++) {
-                                const hgTx = walletTransactionMap.get(i)[1]  
-                                hgTx.gasPrice = holyGrailGasPrice
-                                // var sentTestTx = wallet1.sendTransaction(hgTx) 
-                                // console.log("sentTestTx: "+ JSON.stringify(sentTestTx));
-                                let walletTransaction: WalletTransactionDetail = {
-                                  isMined: false,
-                                  tx: hgTx,
-                                  isSent: true
-                                }
-                                walletTransactionMap.set(i, walletTransaction)
-                              }
-                              setHolyGrailTxSent(true);
-                            // }
-                        }               
-                  }
-                } else {
-                  // do nothing
-                }
+                // Inspect the transaction, see if it is relevant, and send mint transactions if all conditions are met
+                processMempoolTransaction(transaction);
             }); 
           } catch (e) {
             console.log("error: " + e)
@@ -290,63 +226,142 @@ export async function subscribeToMempoolTransactions() {
     })
 }
 
+function processMempoolTransaction(transaction: any) {
+  if (transaction !== null && transaction.hash !== null && transaction.hash !== undefined) {
+    var from = transaction.from
+    var to = transaction.to
+    // look for the transaction that sets the public mint live from the contract owner                  
+    if (to !== null && to !== undefined && from !== null && from !== undefined
+      && transaction.to.toLowerCase().includes(CONTRACT_ADDRESS)
+      && (from.toLowerCase().includes(CONTRACT_OWNER_ADDRESS) || from.toLowerCase().includes(ALT_CARTOONS_CONTRACT_OWNER))
+      && transaction.input.toLowerCase().includes(ENABLE_PUBLIC_MINT_SIGNATURE)) { // publicMintEnabled signature
+          console.log("isActive() tx detected!")
+
+          // TODO: we could place logic here to extract details from this tx if we have time
+          // and use it to populate the flashbotsMintBool var                      
+          const decodedData = abiDecoder.decodeMethod(transaction.input);
+          console.log("JSON.stringify(decodedData): " + JSON.stringify(decodedData))
+          setFlashbotsMintBool(decodedData.params[0].value)
+          console.log("flashbotsMintBool: " + flashbotsMintBool)
+          
+          // TODO: TypeError: Cannot mix BigInt and other types, use explicit conversions
+          if (flashbotsMintBool && !holyGrailTxSent) {
+            var holyGrailGasPrice       
+            if (transaction.gasPrice !== null || transaction.gasPrice !== undefined) {
+              holyGrailGasPrice = transaction.gasPrice
+            } else {
+              holyGrailGasPrice = transaction.maxFeePerGas
+            }
+            
+              // // We test a flashbots bundle with the mint enabled function, and if it works then we assume its good and blast off mint transactions
+              // const raw = encodeSignedTransaction(transaction, web3)
+              // const wallet1tx = walletLoopMap.get(wallet1)[2]
+              // const bundledTransactions = [
+              //   {
+              //     signedTransaction: raw // serialized signed transaction hex
+              //   },
+              //   {
+              //     signer: wallet1,
+              //     transaction: wallet1tx
+              //   }
+              // ];                        
+              // const signedBundle = await flashbotsProvider.signBundle(bundledTransactions) // does it simulate when you sign?
+              // const simulation = await flashbotsProvider.simulate(signedBundle, blocknum + 1 ) // TODO: skip simulation?
+              // if ("error" in simulation || simulation.firstRevert !== undefined) {
+              //   console.log(`Simulation Error, skipping`)
+              //   console.log("simulation error: " + JSON.stringify(simulation))
+              // } else {
+              //   console.log("successful simulation. sending bundle");
+
+                // SEND HOLY GRAIL TRANSACTIONS
+                console.log("sending holy grail transactions")
+                for (let i = MIN_NONCE; i < MAX_NONCE; i++) {
+                  const hgTx = walletTransactionMap.get(i)[1]  
+                  hgTx.gasPrice = holyGrailGasPrice
+                  var sentTestTx = wallet1.sendTransaction(hgTx) 
+                  console.log("sentTestTx: "+ JSON.stringify(sentTestTx));
+                  let walletTransaction: WalletTransactionDetail = {
+                    isMined: false,
+                    tx: hgTx,
+                    isSent: true
+                  }
+                  walletTransactionMap.set(i, walletTransaction)
+                }
+                setHolyGrailTxSent(true);
+              // }
+          }               
+    }
+  } else {
+    // do nothing
+  }
+}
+
 export async function watchEachNewBlock() {
   provider.on('block', async (blockNumber) => {
-    console.log("blockNumber: " + blockNumber)
-    setBlocknum(blockNumber);
-    const blockWithTransactions = await provider.getBlockWithTransactions(blockNumber)
-    const transactions = blockWithTransactions.transactions
-
-    // get gas price that made it into the current block
-    const numberOfTransactions = await blockWithTransactions.transactions.length;
-    console.log("numberOfTransactions in block: " + numberOfTransactions)
-    // resubmission price tends to be relatively high
-    const slicedGasPrice = blockWithTransactions.transactions.map(t => t.gasPrice.toNumber())
-    .sort((n1,n2) => n1 - n2)
-    .slice(20,numberOfTransactions-20)
-    const sum = slicedGasPrice.reduce((a, b) => a + b, 0);
-    const lowAvg = (sum / slicedGasPrice.length) || (GWEI * 100n);
-    const truncated = Math.trunc(Number(lowAvg))
-    setGasOverridePrice(BigInt(truncated) + gasToAddToBlockAvg)
-    console.log("gasOverridePrice: " + gasOverridePrice)
-
-    setPublicMintEnabled(await ContractObject.isPublicMintActive())
-    console.log("publicMintEnabled: " + publicMintEnabled)
+    // Set relevant variables (blockNum, gas), and extract transactions from the block
+    const transactions: TransactionResponse[] = await processBlock(blockNumber)
 
     // Check if our mint transactions have been mined in
-    function checkIfMintTransactionsMined() {
-      return new Promise((resolve) => {
-        transactions.map(function (t) {
-          if (wallet1.address.toLowerCase().includes(t.from.toLowerCase())) {
-            var txNonce = t.nonce
-            var walletTransactionMapValues = walletTransactionMap.get(txNonce)
-            if (walletTransactionMapValues !== null && walletTransactionMapValues !== undefined) {
-              walletTransactionMapValues.isMined = true;
-              walletTransactionMap.set(txNonce, walletTransactionMapValues)
-              console.log("Mint mined in for txNonce " + txNonce)
-            } else {
-              console.log("nonce not found in walletTransactionMap: " + t.nonce)
-            }
-          }
-        })
-        resolve(true)
-      });
-    }
+    await checkIfMintTransactionAreMined(transactions);
 
-    // We wait for this check to run before triggering the sendMintTransactions() function
-    await checkIfMintTransactionsMined()
-      .then(response => {
-    })
-    .catch(error => {
-        // Error
-      console.log(error);
-    });
-
-    // ================================
-    // SENDING MINT TRANSACTIONS
-    // ================================
+    // Sent mint transactions if the mint is enabled in the contract
     await sendMintTransactions();
   })
+}
+
+async function processBlock(blockNumber: any) {
+  console.log("blockNumber: " + blockNumber)
+  setBlocknum(blockNumber);
+  const blockWithTransactions = await provider.getBlockWithTransactions(blockNumber)
+  const transactions: TransactionResponse[] = blockWithTransactions.transactions
+
+  // get gas price that made it into the current block
+  const numberOfTransactions = await blockWithTransactions.transactions.length;
+  console.log("numberOfTransactions in block: " + numberOfTransactions)
+  // resubmission price tends to be relatively high
+  const slicedGasPrice = blockWithTransactions.transactions.map(t => t.gasPrice.toNumber())
+  .sort((n1,n2) => n1 - n2)
+  .slice(20,numberOfTransactions-20)
+  const sum = slicedGasPrice.reduce((a, b) => a + b, 0);
+  const lowAvg = (sum / slicedGasPrice.length) || (GWEI * 100n);
+  const truncated = Math.trunc(Number(lowAvg))
+  setGasOverridePrice(BigInt(truncated) + gasToAddToBlockAvg)
+  console.log("gasOverridePrice: " + gasOverridePrice)
+
+  setPublicMintEnabled(await ContractObject.isPublicMintActive())
+  console.log("publicMintEnabled: " + publicMintEnabled)
+
+  return transactions;
+}
+
+async function checkIfMintTransactionAreMined(transactions: TransactionResponse[]) {
+  function checkIfMintTransactionsMined() {
+    return new Promise((resolve) => {
+      transactions.map(function (t) {
+        if (wallet1.address.toLowerCase().includes(t.from.toLowerCase())) {
+          var txNonce = t.nonce
+          var walletTransactionMapValues = walletTransactionMap.get(txNonce)
+          if (walletTransactionMapValues !== null && walletTransactionMapValues !== undefined) {
+            walletTransactionMapValues.isMined = true;
+            walletTransactionMap.set(txNonce, walletTransactionMapValues)
+            console.log("Mint mined in for txNonce " + txNonce)
+          } else {
+            console.log("nonce not found in walletTransactionMap: " + t.nonce)
+          }
+        }
+      })
+      resolve(true)
+    });
+  }
+
+  // We wait for this check to run before triggering the sendMintTransactions() function
+  await checkIfMintTransactionsMined()
+    .then(response => {
+  })
+  .catch(error => {
+      // Error
+    console.log(error);
+  });
 }
 
 async function sendMintTransactions() {
