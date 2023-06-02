@@ -7,7 +7,6 @@ import {
 } from "./mevbot/mev-functions"
 require('dotenv').config() // this lets us use the config in the .env file
 
-// This application is based heavily on https://github.com/flashbots/searcher-minter
 const { JSDOM } = require( "jsdom" );
 const { window } = new JSDOM( "" );
 const { encode } = require('rlp')

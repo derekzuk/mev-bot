@@ -1,6 +1,6 @@
-# Flashbots searcher-minter
+# MEV Bot (NFT Sniper)
 
-This repository was originally based on a simple demo application of [Flashbots](https://docs.flashbots.net), which allows arbitrary submission of a single transaction to Flashbots. This MEV bot could be adapted for many purposes, but in its current form it is used to snipe NFT drops.
+This repository was originally based on a simple demo application of [Flashbots](https://docs.flashbots.net)(https://github.com/flashbots/searcher-minter), which allows arbitrary submission of a single transaction to Flashbots. This MEV bot could be adapted for many purposes, but in its current form it is used to snipe NFT drops.
 
 # Executor Flow
 
