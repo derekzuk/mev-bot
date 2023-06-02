@@ -75,13 +75,14 @@ export async function initialVariableSetup() {
 }
 
 export async function etherscanApiInteractions() {
+    // Extract the mint function from the given smart contract
     var mintFunctionInputs = await getMintFunctionInputs(ContractObject, CONTRACT_ADDRESS, provider)
     console.log("mintFunctionInputs: " + JSON.stringify(mintFunctionInputs))
     var finalMintFunctionInput
     if (mintFunctionInputs.length == 1) {
       finalMintFunctionInput = mintFunctionInputs[0]
     } else {
-      // run logic to pick the real public mint function
+      // Run logic to pick the real public mint function
       mintFunctionInputs.forEach(mintFunc => {
         if (mintFunc.name.toLowerCase() == "mint" 
         || mintFunc.name.toLowerCase() == "buy" 
@@ -98,6 +99,7 @@ export async function etherscanApiInteractions() {
   
     console.log("finalMintFunctionInput: " + JSON.stringify(finalMintFunctionInput))
   
+    // Create the mint transactions that will be sent and populate the walletTransactionMap
     try {
       for (let i = MIN_NONCE; i < MAX_NONCE; i++) {
         var mintFunctionName = finalMintFunctionInput.name
@@ -128,24 +130,19 @@ export async function etherscanApiInteractions() {
             }
           }
           if (quantityIndex > -1 && toAddressIndex > -1) {
-            // TODO: populate mints for every wallet
+            let mintTransactionFromEtherscan;
             if (quantityIndex == 0) {
-              var mintTransactionFromEtherscan = await ContractObject.populateTransaction[mintFunctionName](mintsPerWallet, wallet1.address)
-              mintTransactionFromEtherscan.from = wallet1.address
-              mintTransactionFromEtherscan.value = mintEthValue // This is the ETH sent to the payable mint function in the contract
-              mintTransactionFromEtherscan.nonce = i            
-              mintTransactionFromEtherscan.gasPrice = BigNumber.from(initialSendGasPrice)
-              mintTransactionFromEtherscan.gasLimit = BigNumber.from(140000n)
-              walletTransactionMap.set(i, [false, mintTransactionFromEtherscan, false]);
+              mintTransactionFromEtherscan = await ContractObject.populateTransaction[mintFunctionName](mintsPerWallet, wallet1.address)
             } else {
-              var mintTransactionFromEtherscan = await ContractObject.populateTransaction[mintFunctionName](wallet1.address, mintsPerWallet)
-              mintTransactionFromEtherscan.from = wallet1.address
-              mintTransactionFromEtherscan.value = mintEthValue // This is the ETH sent to the payable mint function in the contract
-              mintTransactionFromEtherscan.nonce = i
-              mintTransactionFromEtherscan.gasPrice = BigNumber.from(initialSendGasPrice)
-              mintTransactionFromEtherscan.gasLimit = BigNumber.from(140000n)
-              walletTransactionMap.set(i, [false, mintTransactionFromEtherscan, false]);
+              mintTransactionFromEtherscan = await ContractObject.populateTransaction[mintFunctionName](wallet1.address, mintsPerWallet)
             }
+
+            mintTransactionFromEtherscan.from = wallet1.address
+            mintTransactionFromEtherscan.value = mintEthValue // This is the ETH sent to the payable mint function in the contract
+            mintTransactionFromEtherscan.nonce = i            
+            mintTransactionFromEtherscan.gasPrice = BigNumber.from(initialSendGasPrice)
+            mintTransactionFromEtherscan.gasLimit = BigNumber.from(140000n)
+            walletTransactionMap.set(i, [false, mintTransactionFromEtherscan, false]);            
           }
         }
       }
@@ -154,7 +151,9 @@ export async function etherscanApiInteractions() {
     }
 }
 
+// As of now, this function is not needed, but it could be used circumstantially
 export async function initialSend() {
+    // Populate the publicMintEnabled variables. These are used to determine when we should send our initial mint transactions.
     if (publicMintEnabled == false) {
         try {
             setPublicMintEnabled(await ContractObject.isPublicMintActive())
@@ -184,7 +183,7 @@ export async function initialSend() {
             var tx = valueArr[2]
             var txSent = valueArr[3]
         
-            // var sentTx = wallet.sendTransaction(tx)
+            var sentTx = wallet.sendTransaction(tx)
             console.log("tx sent for wallet " + walletNumber)
             walletLoopMap.set(wallet, [walletNumber, txIsMined, tx, true])
         })
