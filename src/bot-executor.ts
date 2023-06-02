@@ -16,7 +16,6 @@ const { encode } = require('rlp')
 async function main() {
   await initialVariableSetup()
   await etherscanApiInteractions();
-  // await initialSend(); // optional
 
   // These functions may need an 'await'
   subscribeToMempoolTransactions(); // This runs concurrently with watchEachNewBlock()

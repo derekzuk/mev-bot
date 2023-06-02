@@ -6,7 +6,7 @@ This repository was originally based on a simple demo application of [Flashbots]
 
 The basic flow of this application is as follows:
 1. `npm start` command triggers the main() function in bot-executor.ts
-2. the main() function contains five functions. The following two functions set up the necessary variables and wallets:
+2. the main() function contains four functions. The following two functions set up the necessary variables and wallets:
 - initialVariableSetup()
 - etherscanApiInteractions()
 3. The next two functions will run concurrently until the application is stopped. These will perform and track our mint transactions:
